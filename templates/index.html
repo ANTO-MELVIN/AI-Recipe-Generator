@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Cooking? | AI Recipe Generator</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="brand">🥑 What's Cooking?</a>
+        <span class="nav-label">AI RECIPE GENERATOR</span>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <span class="eyebrow">YOUR KITCHEN, YOUR INGREDIENTS</span>
+            <h1>Good food starts<br>with <span>what you have.</span></h1>
+            <p>Tell us what's in your kitchen. Let AI inspire
+               your next delicious meal.</p>
+        </section>
+
+        <section class="recipe-panel">
+            <form id="recipe-form">
+                <label for="ingredients">What's in your kitchen?</label>
+                <textarea id="ingredients"
+                    placeholder="e.g. rice, eggs, onion, tomato..."
+                    required maxlength="1000"></textarea>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="diet">Diet preference</label>
+                        <select id="diet">
+                            <option>Any</option>
+                            <option>Vegetarian</option>
+                            <option>Non-vegetarian</option>
+                            <option>Vegan</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="max-time">Maximum cooking time</label>
+                        <select id="max-time">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="difficulty">Cooking level</label>
+                        <select id="difficulty">
+                            <option>Easy</option>
+                            <option>Medium</option>
+                            <option>Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="generate-btn" type="submit">
+                    ✨ Generate My Recipes
+                </button>
+            </form>
+        </section>
+
+        <section id="results" class="results" aria-live="polite" hidden>
+            <h2>Your kitchen inspiration</h2>
+            <div id="recipe-output" class="recipe-output"></div>
+        </section>
+
+        <footer>
+            Made with ❤️ and a little AI magic.
+            <p>AI suggestions may need your own cooking judgment.
+               Check ingredient safety and doneness.</p>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
