@@ -125,6 +125,80 @@ body {
     margin: 0 0 8px;
 }
 
+.chat-panel {
+    margin-top: 28px;
+    padding-top: 25px;
+    border-top: 1px solid #e9ece4;
+}
+
+.chat-panel h2 {
+    color: var(--green);
+}
+
+.chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    margin: 18px 0 12px;
+    padding: 14px;
+    border: 1px solid #e9ece4;
+    border-radius: 14px;
+    background: #f8fbf6;
+}
+
+.chat-message {
+    max-width: 85%;
+    padding: 10px 13px;
+    border-radius: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.chat-message.assistant {
+    align-self: flex-start;
+    background: var(--white);
+    border: 1px solid #e1e8df;
+}
+
+.chat-message.user {
+    align-self: flex-end;
+    color: var(--white);
+    background: var(--green);
+}
+
+.chat-form {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #dce2d9;
+    border-radius: 10px;
+    font: inherit;
+}
+
+.chat-form button {
+    width: auto;
+    margin: 0;
+    padding: 10px 16px;
+}
+
+.chat-form .voice-btn {
+    padding: 10px 13px;
+}
+
+.voice-status {
+    min-height: 18px;
+    margin: 8px 0 0;
+    color: #55735d;
+    font-size: 13px;
+}
+
 .eyebrow {
     color: var(--green);
     font-size: 12px;
@@ -403,6 +477,61 @@ textarea {
     min-height: 120px;
     resize: vertical;
     margin-bottom: 24px;
+}
+
+.voice-btn {
+    width: auto;
+    margin: 0 0 16px;
+    padding: 12px 18px;
+    background: #e7f1e8;
+    color: #285b3c;
+    border: 1px solid #c8dfcb;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.voice-btn:hover {
+    background: #d5e9d8;
+    color: #285b3c;
+}
+
+#voice-status {
+    min-height: 18px;
+    margin: -8px 0 18px;
+    color: #55735d;
+    font-size: 13px;
+}
+
+.speech-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 14px;
+    border: 1px solid #e9ece4;
+    border-radius: 12px;
+    background: #f8fbf6;
+}
+
+.speech-controls label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.speech-controls select {
+    width: auto;
+    min-width: 170px;
+    padding: 8px;
+}
+
+.speech-controls input[type="range"] {
+    accent-color: var(--green);
+}
+
+.speech-controls .voice-btn {
+    margin: 0 0 0 auto;
 }
 
 textarea:focus, select:focus {

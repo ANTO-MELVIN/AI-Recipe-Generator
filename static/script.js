@@ -4,9 +4,185 @@ const results = document.getElementById("results");
 const output = document.getElementById("recipe-output");
 const recipeModal = document.getElementById("recipe-modal");
 const pages = document.querySelectorAll(".wizard-page");
+const voiceBtn = document.getElementById("voice-btn");
+const voiceStatus = document.getElementById("voice-status");
+const ingredientsInput = document.getElementById("ingredients");
+const speakRecipeBtn = document.getElementById("speak-recipe-btn");
+const voiceSelect = document.getElementById("voice-select");
+const speechRate = document.getElementById("speech-rate");
+const speechRateValue = document.getElementById("speech-rate-value");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatMessages = document.getElementById("chat-messages");
+const chatSendButton = document.getElementById("chat-send-btn");
+const chatVoiceButton = document.getElementById("chat-voice-btn");
+const chatStatus = document.getElementById("chat-status");
 let selectedChoice = "eat";
 let selectedCategory = "all";
 let browseAllRecipes = false;
+let currentRecipeText = "";
+let availableVoices = [];
+const messages = [];
+
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    voiceBtn.addEventListener("click", () => {
+        voiceStatus.textContent = "Listening... Speak now.";
+        voiceBtn.disabled = true;
+        try {
+            recognition.start();
+        } catch (error) {
+            voiceStatus.textContent = "Please wait, then try the microphone again.";
+            voiceBtn.disabled = false;
+        }
+    });
+
+    recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        ingredientsInput.value = spokenText;
+        voiceStatus.textContent = `Recognized: ${spokenText}`;
+    };
+
+    recognition.onerror = (event) => {
+        voiceStatus.textContent = `Voice recognition error: ${event.error}`;
+    };
+
+    recognition.onend = () => {
+        voiceBtn.disabled = false;
+    };
+} else {
+    voiceBtn.disabled = true;
+    voiceStatus.textContent =
+        "Speech recognition is not supported in this browser. Try Chrome.";
+}
+
+function loadSpeechVoices() {
+    if (!("speechSynthesis" in window)) return;
+    availableVoices = window.speechSynthesis.getVoices();
+    voiceSelect.innerHTML = "";
+    availableVoices.forEach((voice, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+    });
+}
+
+function speakRecipe(text) {
+    if (!("speechSynthesis" in window)) {
+        voiceStatus.textContent = "Speech output is not supported in this browser.";
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-IN";
+    speech.rate = Number(speechRate.value);
+    speech.pitch = 1;
+    const selectedVoice = availableVoices[Number(voiceSelect.value)];
+    if (selectedVoice) speech.voice = selectedVoice;
+    window.speechSynthesis.speak(speech);
+}
+
+function addChatMessage(role, text) {
+    const message = document.createElement("div");
+    message.className = `chat-message ${role}`;
+    message.textContent = text;
+    chatMessages.appendChild(message);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function sendMessage(text) {
+    const message = text.trim();
+    if (!message) return;
+
+    messages.push({ role: "user", content: message });
+    addChatMessage("user", message);
+    chatInput.value = "";
+    chatSendButton.disabled = true;
+    chatVoiceButton.disabled = true;
+    chatStatus.textContent = "Your AI chef is thinking...";
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 30000);
+
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages }),
+            signal: controller.signal
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to get a response.");
+
+        messages.push({ role: "assistant", content: data.reply });
+        addChatMessage("assistant", data.reply);
+        speakRecipe(data.reply);
+        chatStatus.textContent = "";
+    } catch (error) {
+        chatStatus.textContent = error.name === "AbortError"
+            ? "The assistant took too long to respond. Please try again."
+            : error.message || "Could not connect to the cooking assistant.";
+    } finally {
+        window.clearTimeout(timeout);
+        chatSendButton.disabled = false;
+        chatVoiceButton.disabled = false;
+        chatInput.focus();
+    }
+}
+
+chatForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendMessage(chatInput.value);
+});
+
+if (SpeechRecognition) {
+    const chatRecognition = new SpeechRecognition();
+    chatRecognition.lang = "en-IN";
+    chatRecognition.continuous = false;
+    chatRecognition.interimResults = false;
+
+    chatVoiceButton.addEventListener("click", () => {
+        chatStatus.textContent = "Listening... Speak your message.";
+        chatVoiceButton.disabled = true;
+        try {
+            chatRecognition.start();
+        } catch (error) {
+            chatStatus.textContent = "Please wait, then try the microphone again.";
+            chatVoiceButton.disabled = false;
+        }
+    });
+
+    chatRecognition.onresult = (event) => {
+        sendMessage(event.results[0][0].transcript);
+    };
+    chatRecognition.onerror = (event) => {
+        chatStatus.textContent = `Voice recognition error: ${event.error}`;
+        chatVoiceButton.disabled = false;
+    };
+    chatRecognition.onend = () => {
+        chatVoiceButton.disabled = false;
+    };
+} else {
+    chatVoiceButton.disabled = true;
+    chatStatus.textContent = "Chat voice input is not supported in this browser.";
+}
+
+loadSpeechVoices();
+if ("speechSynthesis" in window) {
+    window.speechSynthesis.addEventListener("voiceschanged", loadSpeechVoices);
+}
+speakRecipeBtn.addEventListener("click", () => speakRecipe(currentRecipeText));
+speechRate.addEventListener("input", () => {
+    speechRateValue.textContent = `${speechRate.value}x`;
+});
 
 document.getElementById("browse-recipes-btn").addEventListener("click", () => {
     browseAllRecipes = true;
@@ -222,6 +398,8 @@ form.addEventListener("submit", async (event) => {
         }
 
         output.textContent = formatRecipe(data);
+        currentRecipeText = output.textContent;
+        speakRecipe(currentRecipeText);
         goToPage(3);
     } catch (error) {
         output.textContent = error.message ||

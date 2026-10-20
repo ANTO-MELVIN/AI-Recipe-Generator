@@ -20,6 +20,61 @@ def home():
     return render_template("index.html")
 
 
+@app.post("/chat")
+def chat():
+    if client is None:
+        return jsonify({"error": "Gemini API key is missing. Check your .env file."}), 500
+
+    data = request.get_json(silent=True) or {}
+    raw_messages = data.get("messages", [])
+    if not isinstance(raw_messages, list) or not raw_messages:
+        return jsonify({"error": "Please send a conversation message."}), 400
+
+    history = []
+    for message in raw_messages[-30:]:
+        if not isinstance(message, dict):
+            continue
+        role = message.get("role")
+        content = str(message.get("content", "")).strip()
+        if role in {"user", "assistant"} and content:
+            history.append(f"{role.title()}: {content}")
+
+    if not history or not history[-1].startswith("User:"):
+        return jsonify({"error": "The latest conversation message must come from the user."}), 400
+
+    prompt = """You are a friendly, conversational AI cooking assistant.
+GOAL:
+Have a natural conversation with the user, understand their available ingredients,
+preferences, and cooking requirements, then recommend and finalize a suitable recipe.
+RULES:
+1. Remember details from the entire conversation.
+2. Ask one short, useful follow-up question when important information is missing.
+3. Ask about dietary preference, spice level, or cooking time when relevant.
+4. Identify ingredients the user already has and items still required. Never claim
+   the user has an item without evidence.
+5. Suggest reasonable substitutions where possible.
+6. Respect dietary restrictions and cooking-time preferences.
+7. Do not finalize a recipe until enough information is known or the user asks.
+8. When asked to finalize, provide the recipe name, available ingredients,
+   additional required items, quantities, preparation steps, cooking time, and servings.
+9. Clearly distinguish optional items from essential items.
+10. Keep replies concise and natural because they will be spoken aloud.
+11. Never claim you can physically inspect the user's kitchen.
+
+CONVERSATION SO FAR:
+""" + "\n".join(history)
+
+    try:
+        response = client.models.generate_content(model=MODEL, contents=prompt)
+        reply = response.text
+        if not reply:
+            return jsonify({"error": "The AI returned no response."}), 502
+        return jsonify({"reply": reply})
+    except errors.APIError:
+        app.logger.exception("Conversation generation failed")
+        return jsonify({"error": "Unable to respond. Check your API and connection."}), 502
+
+
 @app.post("/generate")
 def generate_recipe():
     if client is None:

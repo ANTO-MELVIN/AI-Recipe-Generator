@@ -105,6 +105,10 @@
                 <textarea id="ingredients"
                     placeholder="Add other ingredients, e.g. salt, pepper..."
                     maxlength="1000"></textarea>
+                <button type="button" id="voice-btn" class="voice-btn">
+                    🎙️ Speak Ingredients
+                </button>
+                <p id="voice-status" aria-live="polite"></p>
 
                 <div class="form-grid">
                     <div>
@@ -144,6 +148,21 @@
                     Browse 10 ready recipes
                 </button>
             </form>
+
+            <section class="chat-panel" aria-labelledby="chat-heading">
+                <h2 id="chat-heading">Ask your AI cooking assistant</h2>
+                <p class="field-help">Tell the assistant what you have, then ask questions or say “finalize my recipe.”</p>
+                <div id="chat-messages" class="chat-messages" aria-live="polite">
+                    <div class="chat-message assistant">Hi! What ingredients do you have, and what would you like to cook?</div>
+                </div>
+                <form id="chat-form" class="chat-form">
+                    <input id="chat-input" type="text" maxlength="1000"
+                        placeholder="e.g. I have rice and eggs..." autocomplete="off">
+                    <button id="chat-send-btn" type="submit">Send</button>
+                    <button id="chat-voice-btn" class="voice-btn" type="button">🎙️</button>
+                </form>
+                <p id="chat-status" class="voice-status" aria-live="polite"></p>
+            </section>
         </section>
 
         <section id="page-3" class="popular-recipes wizard-page" hidden>
@@ -225,6 +244,16 @@
 
         <section id="results" class="results wizard-page" aria-live="polite" hidden>
             <h2>Your kitchen inspiration</h2>
+            <div class="speech-controls">
+                <label for="voice-select">Read recipe aloud</label>
+                <select id="voice-select" aria-label="Choose a reading voice"></select>
+                <label for="speech-rate">Speed</label>
+                <input id="speech-rate" type="range" min="0.6" max="1.4" step="0.05" value="0.95">
+                <span id="speech-rate-value">0.95x</span>
+                <button id="speak-recipe-btn" class="voice-btn" type="button">
+                    🔊 Read Recipe Aloud
+                </button>
+            </div>
             <div id="recipe-output" class="recipe-output"></div>
         </section>
 
