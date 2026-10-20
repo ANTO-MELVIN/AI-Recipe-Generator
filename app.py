@@ -11,8 +11,15 @@ load_dotenv()
 app = Flask(__name__)
 
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
-MODEL = "gemini-3.8-flash"
+client = (
+    genai.Client(
+        api_key=api_key,
+        http_options=genai.types.HttpOptions(timeout=60000),
+    )
+    if api_key
+    else None
+)
+MODEL = "gemini-flash-lite-latest"
 
 
 @app.get("/")
@@ -70,9 +77,15 @@ CONVERSATION SO FAR:
         if not reply:
             return jsonify({"error": "The AI returned no response."}), 502
         return jsonify({"reply": reply})
-    except errors.APIError:
+    except errors.APIError as error:
         app.logger.exception("Conversation generation failed")
-        return jsonify({"error": "Unable to respond. Check your API and connection."}), 502
+        if error.code == 429:
+            message = "Gemini API quota has been exceeded. Please try again later."
+        elif error.code in {503, 504}:
+            message = "Gemini is temporarily busy. Please try again in a moment."
+        else:
+            message = "Gemini could not respond. Please check your API configuration."
+        return jsonify({"error": message}), 502
 
 
 @app.post("/generate")

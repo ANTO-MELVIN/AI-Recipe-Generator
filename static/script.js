@@ -110,7 +110,7 @@ async function sendMessage(text) {
     chatVoiceButton.disabled = true;
     chatStatus.textContent = "Your AI chef is thinking...";
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 30000);
+    const timeout = window.setTimeout(() => controller.abort(), 65000);
 
     try {
         const response = await fetch("/chat", {
