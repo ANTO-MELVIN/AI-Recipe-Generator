@@ -14,19 +14,97 @@
     </header>
 
     <main class="container">
-        <section class="hero">
+        <section id="page-1" class="hero wizard-page">
             <span class="eyebrow">YOUR KITCHEN, YOUR INGREDIENTS</span>
-            <h1>Good food starts<br>with <span>what you have.</span></h1>
-            <p>Tell us what's in your kitchen. Let AI inspire
-               your next delicious meal.</p>
+            <h1>What's on your mind<br>to <span>eat or drink?</span></h1>
+            <p>Choose what you feel like having, and we will help you make something delicious.</p>
+            <div class="choice-grid">
+                <button class="choice-card" type="button" data-choice="eat">
+                    <span class="choice-icon">🍽️</span>
+                    <strong>I want to eat</strong>
+                    <small>Meals and tasty snacks</small>
+                </button>
+                <button class="choice-card" type="button" data-choice="drink">
+                    <span class="choice-icon">🥤</span>
+                    <strong>I want to drink</strong>
+                    <small>Juices and milkshakes</small>
+                </button>
+            </div>
         </section>
 
-        <section class="recipe-panel">
+        <section id="page-2" class="recipe-panel wizard-page" hidden>
+            <div class="step-heading">
+                <button class="back-button" type="button" data-go-page="1">← Back</button>
+                <span class="step-label">STEP 2 OF 3</span>
+            </div>
             <form id="recipe-form">
-                <label for="ingredients">What's in your kitchen?</label>
+                <h2 id="ingredient-heading">What do you have in your kitchen?</h2>
+                <p id="choice-summary" class="field-help">Choose ingredients below or add your own.</p>
+                <p class="field-help">Choose ingredients below or add your own.</p>
+                <div class="ingredient-categories">
+                    <fieldset class="ingredient-group">
+                        <legend>Vegetables</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Onion"> Onion</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Tomato"> Tomato</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Potato"> Potato</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Carrot"> Carrot</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Spinach"> Spinach</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Bell pepper"> Bell pepper</label>
+                    </fieldset>
+
+                    <fieldset class="ingredient-group">
+                        <legend>Fruits</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Apple"> Apple</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Banana"> Banana</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Mango"> Mango</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Orange"> Orange</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Lemon"> Lemon</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Avocado"> Avocado</label>
+                    </fieldset>
+
+                    <fieldset class="ingredient-group">
+                        <legend>Proteins</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Eggs"> Eggs</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Chicken"> Chicken</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Fish"> Fish</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Tofu"> Tofu</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Chickpeas"> Chickpeas</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Lentils"> Lentils</label>
+                    </fieldset>
+
+                    <fieldset class="ingredient-group">
+                        <legend>Grains &amp; Pasta</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Rice"> Rice</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Pasta"> Pasta</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Bread"> Bread</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Oats"> Oats</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Quinoa"> Quinoa</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Noodles"> Noodles</label>
+                    </fieldset>
+
+                    <fieldset class="ingredient-group">
+                        <legend>Dairy</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Milk"> Milk</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Cheese"> Cheese</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Yogurt"> Yogurt</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Butter"> Butter</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Cream"> Cream</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Paneer"> Paneer</label>
+                    </fieldset>
+
+                    <fieldset class="ingredient-group">
+                        <legend>Pantry &amp; Herbs</legend>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Garlic"> Garlic</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Ginger"> Ginger</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Olive oil"> Olive oil</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Soy sauce"> Soy sauce</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Coconut milk"> Coconut milk</label>
+                        <label class="ingredient-option"><input type="checkbox" name="ingredient" value="Cilantro"> Cilantro</label>
+                    </fieldset>
+                </div>
                 <textarea id="ingredients"
-                    placeholder="e.g. rice, eggs, onion, tomato..."
-                    required maxlength="1000"></textarea>
+                    placeholder="Add other ingredients, e.g. salt, pepper..."
+                    maxlength="1000"></textarea>
 
                 <div class="form-grid">
                     <div>
@@ -62,10 +140,90 @@
                 <button id="generate-btn" type="submit">
                     ✨ Generate My Recipes
                 </button>
+                <button id="browse-recipes-btn" class="secondary-button" type="button">
+                    Browse 10 ready recipes
+                </button>
             </form>
         </section>
 
-        <section id="results" class="results" aria-live="polite" hidden>
+        <section id="page-3" class="popular-recipes wizard-page" hidden>
+            <div class="section-heading">
+                <div class="step-heading">
+                    <button class="back-button" type="button" data-go-page="2">← Back</button>
+                    <span class="step-label">STEP 3 OF 3</span>
+                </div>
+                <span class="eyebrow">QUICK INSPIRATION</span>
+                <h2 id="inspiration-heading">10 ready recipes</h2>
+                <p>Choose a recipe image to see its ingredients and cooking procedure.</p>
+            </div>
+            <div class="recipe-filters" role="group" aria-label="Recipe categories">
+                <button class="recipe-filter active" type="button" data-category="all">All</button>
+                <button class="recipe-filter" type="button" data-category="meals">Meals</button>
+                <button class="recipe-filter" type="button" data-category="juices">Juices</button>
+                <button class="recipe-filter" type="button" data-category="milkshakes">Milkshakes</button>
+                <button class="recipe-filter" type="button" data-category="snacks">Snacks</button>
+            </div>
+            <div class="recipe-grid">
+                <button class="recipe-card" type="button" data-recipe="biryani" data-category="meals">
+                    <img src="https://images.unsplash.com/photo-1563379091339-03246963d96c?auto=format&fit=crop&w=700&q=80" alt="Chicken biryani with rice and spices">
+                    <span class="recipe-card-content"><strong>Chicken Biryani</strong><small>Fragrant rice · 55 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="fried-rice" data-category="meals">
+                    <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=700&q=80" alt="Vegetable fried rice in a bowl">
+                    <span class="recipe-card-content"><strong>Vegetable Fried Rice</strong><small>Easy weeknight meal · 25 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="pasta" data-category="meals">
+                    <img src="https://images.unsplash.com/photo-1556761223-4c4282c73f77?auto=format&fit=crop&w=700&q=80" alt="Creamy pasta with herbs">
+                    <span class="recipe-card-content"><strong>Creamy Garlic Pasta</strong><small>Comfort food · 20 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="curry" data-category="meals">
+                    <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80" alt="Chickpea curry with herbs">
+                    <span class="recipe-card-content"><strong>Chickpea Curry</strong><small>Vegetarian · 30 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="mango-juice" data-category="juices">
+                    <img src="https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=700&q=80" alt="Fresh mango juice">
+                    <span class="recipe-card-content"><strong>Fresh Mango Juice</strong><small>Refreshing drink · 10 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="berry-smoothie" data-category="juices">
+                    <img src="https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=700&q=80" alt="Berry smoothie">
+                    <span class="recipe-card-content"><strong>Berry Juice Blend</strong><small>Fruity and fresh · 5 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="banana-shake" data-category="milkshakes">
+                    <img src="https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=700&q=80" alt="Banana milkshake">
+                    <span class="recipe-card-content"><strong>Banana Milkshake</strong><small>Creamy favorite · 8 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="chocolate-shake" data-category="milkshakes">
+                    <img src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=700&q=80" alt="Chocolate milkshake">
+                    <span class="recipe-card-content"><strong>Chocolate Milkshake</strong><small>Rich and cold · 8 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="samosa" data-category="snacks">
+                    <img src="https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=700&q=80" alt="Crispy samosas">
+                    <span class="recipe-card-content"><strong>Crispy Samosa</strong><small>Spiced snack · 35 min</small></span>
+                </button>
+                <button class="recipe-card" type="button" data-recipe="sandwich" data-category="snacks">
+                    <img src="https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=700&q=80" alt="Grilled vegetable sandwich">
+                    <span class="recipe-card-content"><strong>Grilled Veg Sandwich</strong><small>Quick snack · 15 min</small></span>
+                </button>
+            </div>
+        </section>
+
+        <div id="recipe-modal" class="recipe-modal" hidden>
+            <div class="recipe-modal-backdrop" data-close-recipe></div>
+            <article class="recipe-detail" role="dialog" aria-modal="true" aria-labelledby="recipe-detail-title">
+                <button class="close-recipe" type="button" aria-label="Close recipe" data-close-recipe>&times;</button>
+                <img id="recipe-detail-image" src="" alt="">
+                <div class="recipe-detail-content">
+                    <span id="recipe-detail-meta" class="recipe-meta"></span>
+                    <h2 id="recipe-detail-title"></h2>
+                    <h3>Ingredients</h3>
+                    <ul id="recipe-detail-ingredients"></ul>
+                    <h3>Procedure</h3>
+                    <ol id="recipe-detail-steps"></ol>
+                </div>
+            </article>
+        </div>
+
+        <section id="results" class="results wizard-page" aria-live="polite" hidden>
             <h2>Your kitchen inspiration</h2>
             <div id="recipe-output" class="recipe-output"></div>
         </section>
