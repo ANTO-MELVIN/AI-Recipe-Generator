@@ -28,6 +28,9 @@ let currentRecipeText = "";
 let lastSpokenText = "";
 let availableVoices = [];
 const messages = [];
+let conversationRecognition = null;
+let conversationActive = false;
+let conversationWaitingForReply = false;
 
 function setupAudioRecorder(buttonElement, statusElement, onTranscript) {
     if (!navigator.mediaDevices || !window.MediaRecorder) {
@@ -172,9 +175,10 @@ function loadSpeechVoices() {
     });
 }
 
-function speakRecipe(text) {
+function speakRecipe(text, onEnd = null) {
     if (!("speechSynthesis" in window)) {
         voiceStatus.textContent = "Speech output is not supported in this browser.";
+        if (onEnd) onEnd();
         return;
     }
 
@@ -186,15 +190,16 @@ function speakRecipe(text) {
     speech.pitch = 1;
     const selectedVoice = availableVoices[Number(voiceSelect.value)];
     if (selectedVoice) speech.voice = selectedVoice;
+    speech.onend = () => {
+        if (onEnd) onEnd();
+    };
     window.speechSynthesis.speak(speech);
 }
 
-function stopSpeaking() {
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-}
-
 function replayLastResponse() {
-    if (lastSpokenText) speakRecipe(lastSpokenText);
+    if (!lastSpokenText) return;
+    if (conversationActive && conversationRecognition) conversationRecognition.stop();
+    speakRecipe(lastSpokenText, startConversationRecognition);
 }
 
 function addChatMessage(role, text) {
@@ -213,8 +218,8 @@ async function sendMessage(text) {
     addChatMessage("user", message);
     chatInput.value = "";
     chatSendButton.disabled = true;
-    chatVoiceButton.disabled = true;
     chatStatus.textContent = "Your AI chef is thinking...";
+    conversationWaitingForReply = true;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 65000);
 
@@ -230,7 +235,10 @@ async function sendMessage(text) {
 
         messages.push({ role: "assistant", content: data.reply });
         addChatMessage("assistant", data.reply);
-        speakRecipe(data.reply);
+        speakRecipe(data.reply, () => {
+            conversationWaitingForReply = false;
+            startConversationRecognition();
+        });
         chatReplayButton.disabled = false;
         chatStatus.textContent = "";
     } catch (error) {
@@ -240,7 +248,8 @@ async function sendMessage(text) {
     } finally {
         window.clearTimeout(timeout);
         chatSendButton.disabled = false;
-        chatVoiceButton.disabled = false;
+        conversationWaitingForReply = false;
+        startConversationRecognition();
         chatInput.focus();
     }
 }
@@ -250,15 +259,95 @@ chatForm.addEventListener("submit", (event) => {
     sendMessage(chatInput.value);
 });
 
-setupAudioRecorder(chatVoiceButton, chatStatus, (text) => sendMessage(text));
+function startConversationRecognition() {
+    if (!conversationActive || conversationWaitingForReply || !conversationRecognition) return;
+    try {
+        conversationRecognition.start();
+    } catch (error) {
+        if (error.name !== "InvalidStateError") {
+            chatStatus.textContent = "Microphone listening could not restart. Please try again.";
+        }
+    }
+}
+
+function endConversation() {
+    conversationActive = false;
+    conversationWaitingForReply = false;
+    if (conversationRecognition) conversationRecognition.stop();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    chatVoiceButton.textContent = "🎙️ Start listening";
+    chatStatus.textContent = "Conversation ended.";
+}
+
+function setupContinuousConversation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        chatVoiceButton.disabled = true;
+        chatStatus.textContent =
+            "Continuous voice conversation is not supported in this browser. Use Chrome or type your message.";
+        return;
+    }
+
+    conversationRecognition = new SpeechRecognition();
+    conversationRecognition.continuous = true;
+    conversationRecognition.interimResults = false;
+    conversationRecognition.lang = "en-IN";
+    conversationRecognition.onstart = () => {
+        chatVoiceButton.textContent = "⏹ End conversation";
+        chatStatus.textContent = "Listening... speak naturally. I will respond after each sentence.";
+    };
+    conversationRecognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .slice(event.resultIndex)
+            .filter((result) => result.isFinal)
+            .map((result) => result[0].transcript)
+            .join(" ")
+            .trim();
+        if (transcript) {
+            conversationRecognition.stop();
+            sendMessage(transcript);
+        }
+    };
+    conversationRecognition.onerror = (event) => {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+            conversationActive = false;
+            chatVoiceButton.textContent = "🎙️ Start listening";
+            chatStatus.textContent = "Microphone access was blocked. Allow it and start listening again.";
+        } else if (event.error !== "aborted") {
+            chatStatus.textContent = "I could not hear that. Keep speaking, or try again.";
+        }
+    };
+    conversationRecognition.onend = () => {
+        if (conversationActive && !conversationWaitingForReply) {
+            window.setTimeout(startConversationRecognition, 250);
+        }
+    };
+}
+
+setupContinuousConversation();
+
+chatVoiceButton.addEventListener("click", () => {
+    if (conversationActive) {
+        endConversation();
+        return;
+    }
+    conversationActive = true;
+    startConversationRecognition();
+});
 
 startConversationButton.addEventListener("click", () => {
     goToPage(2);
     chatInput.focus();
-    speakRecipe("Hi! I am your AI chef. Tell me what ingredients you have and what you feel like cooking.");
+    if (!conversationActive) {
+        conversationActive = true;
+        speakRecipe(
+            "Hi! I am your AI chef. Tell me what ingredients you have and what you feel like cooking.",
+            startConversationRecognition
+        );
+    }
 });
 
-chatStopButton.addEventListener("click", stopSpeaking);
+chatStopButton.addEventListener("click", endConversation);
 chatReplayButton.addEventListener("click", replayLastResponse);
 
 finishConversationButton.addEventListener("click", async () => {
