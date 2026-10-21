@@ -17,10 +17,15 @@ const chatMessages = document.getElementById("chat-messages");
 const chatSendButton = document.getElementById("chat-send-btn");
 const chatVoiceButton = document.getElementById("chat-voice-btn");
 const chatStatus = document.getElementById("chat-status");
+const startConversationButton = document.getElementById("start-conversation-btn");
+const chatStopButton = document.getElementById("chat-stop-btn");
+const chatReplayButton = document.getElementById("chat-replay-btn");
+const finishConversationButton = document.getElementById("finish-conversation-btn");
 let selectedChoice = "eat";
 let selectedCategory = "all";
 let browseAllRecipes = false;
 let currentRecipeText = "";
+let lastSpokenText = "";
 let availableVoices = [];
 const messages = [];
 
@@ -173,6 +178,7 @@ function speakRecipe(text) {
         return;
     }
 
+    lastSpokenText = text;
     window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = "en-IN";
@@ -181,6 +187,14 @@ function speakRecipe(text) {
     const selectedVoice = availableVoices[Number(voiceSelect.value)];
     if (selectedVoice) speech.voice = selectedVoice;
     window.speechSynthesis.speak(speech);
+}
+
+function stopSpeaking() {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+function replayLastResponse() {
+    if (lastSpokenText) speakRecipe(lastSpokenText);
 }
 
 function addChatMessage(role, text) {
@@ -217,6 +231,7 @@ async function sendMessage(text) {
         messages.push({ role: "assistant", content: data.reply });
         addChatMessage("assistant", data.reply);
         speakRecipe(data.reply);
+        chatReplayButton.disabled = false;
         chatStatus.textContent = "";
     } catch (error) {
         chatStatus.textContent = error.name === "AbortError"
@@ -236,6 +251,44 @@ chatForm.addEventListener("submit", (event) => {
 });
 
 setupAudioRecorder(chatVoiceButton, chatStatus, (text) => sendMessage(text));
+
+startConversationButton.addEventListener("click", () => {
+    goToPage(2);
+    chatInput.focus();
+    speakRecipe("Hi! I am your AI chef. Tell me what ingredients you have and what you feel like cooking.");
+});
+
+chatStopButton.addEventListener("click", stopSpeaking);
+chatReplayButton.addEventListener("click", replayLastResponse);
+
+finishConversationButton.addEventListener("click", async () => {
+    if (!messages.some((message) => message.role === "user")) {
+        chatStatus.textContent = "Tell me about your ingredients first, then I can create your recipe.";
+        chatInput.focus();
+        return;
+    }
+
+    finishConversationButton.disabled = true;
+    chatStatus.textContent = "Your AI chef is writing the full recipe...";
+    try {
+        const response = await fetch("/generate-conversation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not create the recipe.");
+        output.textContent = formatRecipe(data);
+        currentRecipeText = output.textContent;
+        goToPage(3);
+        speakRecipe(currentRecipeText);
+        chatStatus.textContent = "";
+    } catch (error) {
+        chatStatus.textContent = error.message || "Could not create the recipe.";
+    } finally {
+        finishConversationButton.disabled = false;
+    }
+});
 
 loadSpeechVoices();
 if ("speechSynthesis" in window) {

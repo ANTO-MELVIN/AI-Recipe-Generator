@@ -91,6 +91,16 @@ body {
     font-weight: 400;
 }
 
+.start-conversation-button {
+    max-width: 420px;
+    margin: 24px auto 0;
+}
+
+.start-conversation-help {
+    text-align: center;
+    margin-top: 10px;
+}
+
 .step-heading {
     display: flex;
     align-items: center;
@@ -190,6 +200,22 @@ body {
 
 .chat-form .voice-btn {
     padding: 10px 13px;
+}
+
+.chat-controls {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.chat-controls button {
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.finish-conversation-button {
+    margin-top: 12px;
 }
 
 .voice-status {
@@ -642,6 +668,14 @@ footer p {
 
     .choice-grid {
         grid-template-columns: 1fr;
+    }
+
+    .chat-form {
+        flex-wrap: wrap;
+    }
+
+    .chat-form input {
+        flex-basis: 100%;
     }
 
     .recipe-detail-content {

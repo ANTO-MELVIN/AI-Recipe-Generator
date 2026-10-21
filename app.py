@@ -192,6 +192,66 @@ Return valid JSON only, with exactly these keys:
     return jsonify(recipe)
 
 
+@app.post("/generate-conversation")
+def generate_conversation_recipe():
+    if client is None:
+        return jsonify({"error": "Gemini API key is missing. Check your .env file."}), 500
+
+    data = request.get_json(silent=True) or {}
+    raw_messages = data.get("messages", [])
+    if not isinstance(raw_messages, list) or not raw_messages:
+        return jsonify({"error": "Please have a conversation before creating a recipe."}), 400
+
+    conversation = []
+    for message in raw_messages[-30:]:
+        if not isinstance(message, dict):
+            continue
+        role = message.get("role")
+        content = str(message.get("content", "")).strip()
+        if role in {"user", "assistant"} and content:
+            conversation.append(f"{role.title()}: {content}")
+
+    if not conversation or not any(item.startswith("User:") for item in conversation):
+        return jsonify({"error": "Please tell the cooking assistant what you would like to make."}), 400
+
+    prompt = """You are a practical professional chef. Create one complete recipe from
+the conversation below. Respect the user's ingredients, dietary needs, dislikes,
+servings, and time preferences. If an ingredient is not available, list it clearly
+as an additional required item rather than pretending the user has it.
+
+Return valid JSON only, with exactly these keys:
+{
+  "title": "string",
+  "ingredients": ["string"],
+  "instructions": ["string"],
+  "prep_time": "string",
+  "cook_time": "string",
+  "servings": "string",
+  "note": "string"
+}
+
+CONVERSATION:
+""" + "\n".join(conversation)
+
+    try:
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=prompt,
+            config={"response_mime_type": "application/json"},
+        )
+        recipe = json.loads(response.text)
+    except errors.APIError:
+        app.logger.exception("Conversation recipe generation failed")
+        return jsonify({"error": "Gemini could not create the conversation recipe right now."}), 502
+    except (json.JSONDecodeError, TypeError):
+        app.logger.exception("Gemini returned an invalid conversation recipe response")
+        return jsonify({"error": "Gemini returned an invalid recipe response."}), 502
+
+    if not isinstance(recipe, dict):
+        return jsonify({"error": "Gemini returned an invalid recipe response."}), 502
+    return jsonify(recipe)
+
+
 if __name__ == "__main__":
     app.run(
         host=os.getenv("FLASK_HOST", "0.0.0.0"),

@@ -30,6 +30,10 @@
                     <small>Juices and milkshakes</small>
                 </button>
             </div>
+            <button id="start-conversation-btn" class="start-conversation-button" type="button">
+                🎙️ Start a conversation with your AI chef
+            </button>
+            <p class="field-help start-conversation-help">Talk naturally about what you have and what you feel like eating.</p>
         </section>
 
         <section id="page-2" class="recipe-panel wizard-page" hidden>
@@ -155,6 +159,10 @@
                 <div id="chat-messages" class="chat-messages" aria-live="polite">
                     <div class="chat-message assistant">Hi! What ingredients do you have, and what would you like to cook?</div>
                 </div>
+                <div class="chat-controls" aria-label="Conversation controls">
+                    <button id="chat-stop-btn" class="secondary-button" type="button">⏹ Stop speaking</button>
+                    <button id="chat-replay-btn" class="secondary-button" type="button" disabled>↻ Replay response</button>
+                </div>
                 <form id="chat-form" class="chat-form">
                     <input id="chat-input" type="text" maxlength="1000"
                         placeholder="e.g. I have rice and eggs..." autocomplete="off">
@@ -162,6 +170,9 @@
                     <button id="chat-voice-btn" class="voice-btn" type="button">🎙️</button>
                 </form>
                 <p id="chat-status" class="voice-status" aria-live="polite"></p>
+                <button id="finish-conversation-btn" class="finish-conversation-button" type="button">
+                    ✅ Conversation finished — create my recipe
+                </button>
             </section>
         </section>
 
@@ -243,7 +254,11 @@
         </div>
 
         <section id="results" class="results wizard-page" aria-live="polite" hidden>
-            <h2>Your kitchen inspiration</h2>
+            <div class="step-heading">
+                <button class="back-button" type="button" data-go-page="2">← Continue conversation</button>
+                <span class="step-label">YOUR RECIPE IS READY</span>
+            </div>
+            <h2>Your complete recipe</h2>
             <div class="speech-controls">
                 <label for="voice-select">Read recipe aloud</label>
                 <select id="voice-select" aria-label="Choose a reading voice"></select>
