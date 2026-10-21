@@ -24,44 +24,136 @@ let currentRecipeText = "";
 let availableVoices = [];
 const messages = [];
 
-const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+function setupAudioRecorder(buttonElement, statusElement, onTranscript) {
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+        buttonElement.disabled = true;
+        statusElement.textContent =
+            "Audio recording is not supported in this browser. Please type your message.";
+        return;
+    }
 
-if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-IN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    let recorder = null;
+    let chunks = [];
+    let recordingTimer = null;
 
-    voiceBtn.addEventListener("click", () => {
-        voiceStatus.textContent = "Listening... Speak now.";
-        voiceBtn.disabled = true;
+    buttonElement.addEventListener("click", async () => {
+        if (recorder && recorder.state === "recording") {
+            recorder.stop();
+            return;
+        }
+
         try {
-            recognition.start();
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            recorder = new MediaRecorder(stream);
+            chunks = [];
+            recorder.ondataavailable = (event) => {
+                if (event.data.size > 0) chunks.push(event.data);
+            };
+            recorder.onerror = () => {
+                window.clearTimeout(recordingTimer);
+                stream.getTracks().forEach((track) => track.stop());
+                recorder = null;
+                buttonElement.disabled = false;
+                buttonElement.textContent = buttonElement.id === "voice-btn"
+                    ? "🎙️ Speak Ingredients"
+                    : "🎙️";
+                statusElement.textContent = "Recording failed. Please try again.";
+            };
+            recorder.onstop = async () => {
+                window.clearTimeout(recordingTimer);
+                stream.getTracks().forEach((track) => track.stop());
+                buttonElement.disabled = true;
+                statusElement.textContent = "Transcribing...";
+                let transcriptionTimer = null;
+                try {
+                    const recordedAudio = new Blob(chunks, {
+                        type: recorder.mimeType || "audio/webm"
+                    });
+                    const audio = await convertToWav(recordedAudio);
+                    const formData = new FormData();
+                    formData.append("audio", audio, "voice-message.wav");
+                    const controller = new AbortController();
+                    transcriptionTimer = window.setTimeout(() => controller.abort(), 65000);
+                    const response = await fetch("/transcribe", {
+                        method: "POST",
+                        body: formData,
+                        signal: controller.signal
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || "Transcription failed.");
+                    onTranscript(data.text);
+                    statusElement.textContent = `Recognized: ${data.text}`;
+                } catch (error) {
+                    statusElement.textContent = error.name === "AbortError"
+                        ? "Transcription took too long. Please try again."
+                        : error.message || "The recording could not be transcribed. Please try again.";
+                } finally {
+                    window.clearTimeout(transcriptionTimer);
+                    buttonElement.disabled = false;
+                    buttonElement.textContent = buttonElement.id === "voice-btn"
+                        ? "🎙️ Speak Ingredients"
+                        : "🎙️";
+                }
+            };
+            recorder.start();
+            recordingTimer = window.setTimeout(() => recorder.stop(), 60000);
+            buttonElement.textContent = "⏹️ Stop recording";
+            statusElement.textContent = "Listening... Speak now, then stop recording.";
         } catch (error) {
-            voiceStatus.textContent = "Please wait, then try the microphone again.";
-            voiceBtn.disabled = false;
+            statusElement.textContent =
+                "Microphone access was blocked. Allow microphone access, then try again.";
         }
     });
-
-    recognition.onresult = (event) => {
-        const spokenText = event.results[0][0].transcript;
-        ingredientsInput.value = spokenText;
-        voiceStatus.textContent = `Recognized: ${spokenText}`;
-    };
-
-    recognition.onerror = (event) => {
-        voiceStatus.textContent = `Voice recognition error: ${event.error}`;
-    };
-
-    recognition.onend = () => {
-        voiceBtn.disabled = false;
-    };
-} else {
-    voiceBtn.disabled = true;
-    voiceStatus.textContent =
-        "Speech recognition is not supported in this browser. Try Chrome.";
 }
+
+async function convertToWav(recordedAudio) {
+    const audioContext = new AudioContext();
+    try {
+        const buffer = await audioContext.decodeAudioData(await recordedAudio.arrayBuffer());
+        const channelCount = Math.min(buffer.numberOfChannels, 2);
+        const sampleRate = buffer.sampleRate;
+        const frameCount = buffer.length;
+        const wav = new ArrayBuffer(44 + frameCount * channelCount * 2);
+        const view = new DataView(wav);
+        const writeString = (offset, value) => {
+            for (let index = 0; index < value.length; index += 1) {
+                view.setUint8(offset + index, value.charCodeAt(index));
+            }
+        };
+        writeString(0, "RIFF");
+        view.setUint32(4, 36 + frameCount * channelCount * 2, true);
+        writeString(8, "WAVE");
+        writeString(12, "fmt ");
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, channelCount, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * channelCount * 2, true);
+        view.setUint16(32, channelCount * 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, "data");
+        view.setUint32(40, frameCount * channelCount * 2, true);
+
+        const channels = Array.from({ length: channelCount }, (_, index) =>
+            buffer.getChannelData(index)
+        );
+        let offset = 44;
+        for (let index = 0; index < frameCount; index += 1) {
+            for (let channel = 0; channel < channelCount; channel += 1) {
+                const sample = Math.max(-1, Math.min(1, channels[channel][index]));
+                view.setInt16(offset, sample < 0 ? sample * 32768 : sample * 32767, true);
+                offset += 2;
+            }
+        }
+        return new Blob([wav], { type: "audio/wav" });
+    } finally {
+        await audioContext.close();
+    }
+}
+
+setupAudioRecorder(voiceBtn, voiceStatus, (text) => {
+    ingredientsInput.value = text;
+});
 
 function loadSpeechVoices() {
     if (!("speechSynthesis" in window)) return;
@@ -143,37 +235,7 @@ chatForm.addEventListener("submit", (event) => {
     sendMessage(chatInput.value);
 });
 
-if (SpeechRecognition) {
-    const chatRecognition = new SpeechRecognition();
-    chatRecognition.lang = "en-IN";
-    chatRecognition.continuous = false;
-    chatRecognition.interimResults = false;
-
-    chatVoiceButton.addEventListener("click", () => {
-        chatStatus.textContent = "Listening... Speak your message.";
-        chatVoiceButton.disabled = true;
-        try {
-            chatRecognition.start();
-        } catch (error) {
-            chatStatus.textContent = "Please wait, then try the microphone again.";
-            chatVoiceButton.disabled = false;
-        }
-    });
-
-    chatRecognition.onresult = (event) => {
-        sendMessage(event.results[0][0].transcript);
-    };
-    chatRecognition.onerror = (event) => {
-        chatStatus.textContent = `Voice recognition error: ${event.error}`;
-        chatVoiceButton.disabled = false;
-    };
-    chatRecognition.onend = () => {
-        chatVoiceButton.disabled = false;
-    };
-} else {
-    chatVoiceButton.disabled = true;
-    chatStatus.textContent = "Chat voice input is not supported in this browser.";
-}
+setupAudioRecorder(chatVoiceButton, chatStatus, (text) => sendMessage(text));
 
 loadSpeechVoices();
 if ("speechSynthesis" in window) {

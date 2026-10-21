@@ -88,6 +88,40 @@ CONVERSATION SO FAR:
         return jsonify({"error": message}), 502
 
 
+@app.post("/transcribe")
+def transcribe():
+    if client is None:
+        return jsonify({"error": "Gemini API key is missing. Check your .env file."}), 500
+
+    audio = request.files.get("audio")
+    if audio is None or not audio.filename:
+        return jsonify({"error": "Please record an audio message first."}), 400
+    if audio.mimetype != "audio/wav":
+        return jsonify({"error": "The recording format is not supported. Please try again."}), 400
+
+    audio_data = audio.read()
+    if not audio_data:
+        return jsonify({"error": "The recording was empty. Please try again."}), 400
+    if len(audio_data) > 10 * 1024 * 1024:
+        return jsonify({"error": "The recording is too large. Please keep it under 60 seconds."}), 413
+
+    try:
+        response = client.models.generate_content(
+            model=MODEL,
+            contents=[
+                "Transcribe this audio exactly. Return only the spoken words, with no commentary.",
+                genai.types.Part.from_bytes(data=audio_data, mime_type=audio.mimetype),
+            ],
+        )
+        transcript = (response.text or "").strip()
+        if not transcript:
+            return jsonify({"error": "No speech was detected. Please try again."}), 502
+        return jsonify({"text": transcript})
+    except errors.APIError:
+        app.logger.exception("Audio transcription failed")
+        return jsonify({"error": "The audio could not be transcribed right now. Please try again."}), 502
+
+
 @app.post("/generate")
 def generate_recipe():
     if client is None:
@@ -159,4 +193,8 @@ Return valid JSON only, with exactly these keys:
 
 
 if __name__ == "__main__":
-    app.run(debug=os.getenv("FLASK_DEBUG", "true").lower() == "true")
+    app.run(
+        host=os.getenv("FLASK_HOST", "0.0.0.0"),
+        port=int(os.getenv("FLASK_PORT", "5000")),
+        debug=os.getenv("FLASK_DEBUG", "true").lower() == "true",
+    )
